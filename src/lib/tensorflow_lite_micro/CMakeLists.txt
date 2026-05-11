@@ -36,11 +36,6 @@ if(CONFIG_LIB_TFLM)
 
 	set(TFLITE_DOWNLOADS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tflite_micro/tensorflow/lite/micro/tools/make/downloads)
 
-	get_directory_property(FLAGS COMPILE_OPTIONS)
-	list(REMOVE_ITEM FLAGS "-Wcast-align")
-	set_directory_properties(PROPERTIES COMPILE_OPTIONS "${FLAGS}")
-
-
 	file(GLOB TFLITE_MICRO_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/tflite_micro/tensorflow/lite/*.cc
 	${CMAKE_CURRENT_SOURCE_DIR}/tflite_micro/tensorflow/lite/micro/*.cc
@@ -101,9 +96,11 @@ if(CONFIG_LIB_TFLM)
 	add_dependencies(tensorflow_lite_micro build_tflm_native)
 	target_compile_features(tensorflow_lite_micro PRIVATE cxx_std_17)
 
-	target_compile_options(tensorflow_lite_micro PUBLIC
-	-Wno-float-equal
-	-Wno-shadow
+	px4_target_compile_options_for_compiler(tensorflow_lite_micro PUBLIC
+		GNU_LIKE
+			-Wno-cast-align
+			-Wno-float-equal
+			-Wno-shadow
 	)
 
 

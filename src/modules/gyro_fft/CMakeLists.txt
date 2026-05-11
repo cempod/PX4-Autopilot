@@ -38,12 +38,18 @@ if(${PX4_PLATFORM} MATCHES "NuttX")
 	add_compile_options(-DARM_MATH_DSP)
 endif()
 
-# Disable 32-bit assembly warnings on apple silicon. Triggered by unused code only.
-if(${PX4_PLATFORM} MATCHES "posix" AND APPLE AND ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm64")
-	add_compile_options(-Wno-asm-operand-widths)
+# Disable 32-bit assembly warnings on arm64 platforms (Apple Silicon, Linux aarch64).
+# CMSIS DSP contains ARM Cortex-M assembly that triggers clang warnings on 64-bit ARM.
+# This code is unused on POSIX platforms - only the C fallback implementations run.
+if(${PX4_PLATFORM} MATCHES "posix" AND ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "arm64|aarch64")
+	px4_add_compile_options_for_compiler(
+		GNU_LIKE -Wno-asm-operand-widths
+	)
 endif()
 
-add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-nested-externs>)
+px4_add_c_compile_options_for_compiler(
+	GNU_LIKE -Wno-nested-externs
+)
 
 px4_add_module(
 	MODULE modules__gyro_fft

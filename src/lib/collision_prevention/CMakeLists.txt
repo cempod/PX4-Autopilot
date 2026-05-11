@@ -35,7 +35,9 @@ px4_add_library(CollisionPrevention
 	CollisionPrevention.cpp
 	ObstacleMath.cpp
 )
-target_compile_options(CollisionPrevention PRIVATE -Wno-cast-align) # TODO: fix and enable
+px4_target_compile_options_for_compiler(CollisionPrevention PRIVATE
+	GNU_LIKE -Wno-cast-align # TODO: fix and enable
+)
 target_include_directories(CollisionPrevention PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CollisionPrevention PRIVATE mathlib)
 

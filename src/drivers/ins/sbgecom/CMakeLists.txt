@@ -40,15 +40,27 @@ add_subdirectory(sbgECom)
 
 add_dependencies(sbgECom prebuild_targets)
 
-target_compile_options(sbgECom
-        PRIVATE
-        -Wno-format
-        -Wno-format-security
-        -Wno-bad-function-cast
-        -Wno-double-promotion
-        -Wno-type-limits
-        -Wno-maybe-uninitialized
-        -Wno-float-equal
+# Vendor tree warning relaxations.
+#
+# sbgECom is a third-party submodule (PX4/sbgECom) we do not own.
+# These -Wno-* flags are scoped PRIVATE to the sbgECom target so they
+# apply only when compiling vendor .c files, not to the PX4 wrapper
+# (sbgecom.cpp/.hpp) which is built as a separate target via
+# px4_add_module() below and must remain under PX4's standard -Wall -Werror.
+#
+# If you add a flag here, it should address a warning emitted by vendor
+# code only. Warnings triggered in PX4-authored code must be fixed at
+# the source, not silenced here.
+px4_target_compile_options_for_compiler(sbgECom PRIVATE
+	GNU_LIKE
+		-Wno-format
+		-Wno-format-security
+		-Wno-bad-function-cast
+		-Wno-double-promotion
+		-Wno-type-limits
+		-Wno-maybe-uninitialized
+		-Wno-float-equal
+		-Wno-logical-op
 )
 
 if("${PX4_PLATFORM}" MATCHES "nuttx")
