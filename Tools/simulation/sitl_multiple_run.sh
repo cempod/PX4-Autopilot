@@ -14,8 +14,17 @@ src_path="$SCRIPT_DIR/../../"
 
 build_path=${src_path}/build/px4_sitl_default
 
+# Pick px4 vs px4.exe so this script also runs from Git Bash on Windows.
+px4_bin="$build_path/bin/px4"
+[ -x "$px4_bin.exe" ] && px4_bin="$px4_bin.exe"
+
 echo "killing running instances"
-pkill -x px4 || true
+if command -v pkill >/dev/null 2>&1; then
+	pkill -x px4 || true
+fi
+if command -v taskkill >/dev/null 2>&1; then
+	taskkill //IM px4.exe //F >/dev/null 2>&1 || true
+fi
 
 sleep 1
 
@@ -28,7 +37,7 @@ while [ $n -lt $sitl_num ]; do
 
 	pushd "$working_dir" &>/dev/null
 	echo "starting instance $n in $(pwd)"
-	$build_path/bin/px4 -i $n -d "$build_path/etc" >out.log 2>err.log &
+	"$px4_bin" -i $n -d "$build_path/etc" >out.log 2>err.log &
 	popd &>/dev/null
 
 	n=$(($n + 1))

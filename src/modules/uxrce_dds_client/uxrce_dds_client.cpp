@@ -116,6 +116,7 @@ bool UxrceddsClient::init()
 	deinit();
 
 	if (_transport == Transport::Serial) {
+#if defined(UXRCE_DDS_CLIENT_SERIAL)
 		int fd = open(_device, O_RDWR | O_NOCTTY | O_NONBLOCK);
 
 		if (fd < 0) {
@@ -148,6 +149,10 @@ bool UxrceddsClient::init()
 		_transport_serial = nullptr;
 
 		return false;
+#else
+		PX4_ERR("serial transport not supported on this platform");
+		return false;
+#endif // UXRCE_DDS_CLIENT_SERIAL
 	}
 
 #if defined(UXRCE_DDS_CLIENT_UDP)
@@ -166,6 +171,14 @@ bool UxrceddsClient::init()
 
 		} else {
 			PX4_ERR("init UDP agent IP:%s, port:%s failed", _agent_ip, _port);
+
+			// Symmetric with the serial path above: free the half-initialised
+			// transport here rather than leaving it dangling for the next
+			// init() call to clean up. uxr_init_udp_platform() now releases
+			// its socket / WSAStartup ref on its own failure paths, so
+			// dropping the C++ wrapper here does not leak Winsock state.
+			delete _transport_udp;
+			_transport_udp = nullptr;
 		}
 	}
 
@@ -186,6 +199,8 @@ void UxrceddsClient::deinit()
 		delete _transport_serial;
 		_transport_serial = nullptr;
 	}
+
+#endif // UXRCE_DDS_CLIENT_SERIAL
 
 #if defined(UXRCE_DDS_CLIENT_UDP)
 
@@ -395,10 +410,14 @@ UxrceddsClient::~UxrceddsClient()
 
 	delete_repliers();
 
+#if defined(UXRCE_DDS_CLIENT_SERIAL)
+
 	if (_transport_serial) {
 		uxr_close_serial_transport(_transport_serial);
 		delete _transport_serial;
 	}
+
+#endif // UXRCE_DDS_CLIENT_SERIAL
 
 	perf_free(_loop_perf);
 	perf_free(_loop_interval_perf);
@@ -938,9 +957,13 @@ int UxrceddsClient::print_status()
 
 #endif
 
+#if defined(UXRCE_DDS_CLIENT_SERIAL)
+
 	if (_transport_serial != nullptr) {
 		PX4_INFO("Using transport:     serial");
 	}
+
+#endif // UXRCE_DDS_CLIENT_SERIAL
 
 	if (_connected) {
 		PX4_INFO("Payload tx:          %i B/s", _last_payload_tx_rate);
