@@ -188,8 +188,8 @@ int Logger::task_spawn(int argc, char *argv[])
 	// Wait for the logger instance to be constructed on the child thread
 	// before returning, so a subsequent `logger on` from the startup script
 	// doesn't race ahead and dereference a null instance pointer.
-	if (wait_until_running(desc) < 0) {
-		desc.task_id = -1;
+	if (wait_until_running() < 0) {
+		_task_id = -1;
 		return -1;
 	}
 
