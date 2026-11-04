@@ -1,0 +1,6 @@
+# Native Windows SITL for external simulators (simulator_mavlink / SIH).
+# No Gazebo, no uXRCE-DDS: keeps the MinGW build small and self-contained.
+CONFIG_MODULES_SIMULATION_GZ_MSGS=n
+CONFIG_MODULES_SIMULATION_GZ_BRIDGE=n
+CONFIG_MODULES_SIMULATION_GZ_PLUGINS=n
+CONFIG_MODULES_UXRCE_DDS_CLIENT=n
