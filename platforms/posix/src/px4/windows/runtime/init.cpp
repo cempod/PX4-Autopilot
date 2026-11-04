@@ -559,6 +559,17 @@ struct PX4WindowsGlobalInit {
 
 	static long long open_host_tty()
 	{
+		// Raw Linux syscalls from PE code only work on Wine builds without
+		// Windows syscall emulation. Proton/newer Wine route the `syscall`
+		// instruction to the NT table (Linux open=2 lands on an unimplemented
+		// NtMapUserPhysicalPagesScatter) and abort the process. The host tty
+		// save/restore is cosmetic, so keep it opt-in.
+		const char *opt_in = getenv("PX4_WINE_HOST_TTY");
+
+		if (opt_in == nullptr || strcmp(opt_in, "1") != 0) {
+			return -1;
+		}
+
 		return linux_syscall3(LX_SYS_open,
 				      reinterpret_cast<long long>("/dev/tty"),
 				      LX_O_RDWR | LX_O_NOCTTY, 0);
