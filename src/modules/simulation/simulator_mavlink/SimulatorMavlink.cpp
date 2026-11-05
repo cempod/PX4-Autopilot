@@ -1064,10 +1064,48 @@ void SimulatorMavlink::send()
 			px4_lockstep_wait_for_components();
 
 			send_controls();
+			send_tunes();
 		}
 	}
 
 	orb_unsubscribe(_actuator_outputs_sub);
+}
+
+// Buzzer tunes for the simulator: there is no tone_alarm in SITL, so forward tune_control as PLAY_TUNE_V2
+// (QBASIC 1.1 string, same format the tunes library plays). The simulator renders the buzzer itself.
+void SimulatorMavlink::send_tunes()
+{
+#define PX4_DEFINE_TUNE(ordinal, name, tune, interruptable) tune,
+	static const char *const default_tunes[] = {
+#include <lib/tunes/tune_definition.desc>
+	};
+#undef PX4_DEFINE_TUNE
+	static constexpr unsigned num_tunes = sizeof(default_tunes) / sizeof(default_tunes[0]);
+
+	tune_control_s tune{};
+
+	while (_tune_control_sub.update(&tune)) {
+		mavlink_play_tune_v2_t play{};
+		play.target_system = 0;
+		play.target_component = 0;
+		play.format = TUNE_FORMAT_QBASIC1_1;
+
+		if (tune.tune_id > 0 && tune.tune_id < num_tunes) {
+			strncpy(play.tune, default_tunes[tune.tune_id], sizeof(play.tune) - 1);
+
+		} else if (tune.tune_id == 0 && tune.frequency > 0 && tune.duration > 0) {
+			// Custom tone: nearest note (N1..N84), length from duration at T60 (whole note = 4 s)
+			const float note = 46.f + 12.f * log2f(tune.frequency / 880.f);
+			const int n = math::constrain((int)lroundf(note), 1, 84);
+			const int len = math::constrain((int)lroundf(4e6f / (float)tune.duration), 1, 64);
+			snprintf(play.tune, sizeof(play.tune), "MLT60L%dN%d", len, n);
+
+		} // else: stop -> empty tune
+
+		mavlink_message_t message{};
+		mavlink_msg_play_tune_v2_encode(_param_mav_sys_id.get(), _param_mav_comp_id.get(), &message, &play);
+		send_mavlink_message(message);
+	}
 }
 
 void SimulatorMavlink::request_hil_state_quaternion()

@@ -77,6 +77,7 @@
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
 #include <uORB/topics/rpm.h>
+#include <uORB/topics/tune_control.h>
 
 #include <random>
 
@@ -237,6 +238,7 @@ private:
 	void request_hil_state_quaternion();
 	void send();
 	void send_controls();
+	void send_tunes();
 	void send_heartbeat();
 	void send_esc_telemetry(mavlink_hil_actuator_controls_t hil_act_control);
 	void send_mavlink_message(const mavlink_message_t &aMsg);
@@ -269,6 +271,7 @@ private:
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};
 	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
+	uORB::Subscription _tune_control_sub{ORB_ID(tune_control)};
 
 	// hil map_ref data
 	MapProjection _global_local_proj_ref{};
