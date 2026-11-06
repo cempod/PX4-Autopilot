@@ -1202,6 +1202,12 @@ void SimulatorMavlink::run()
 
 		PX4_INFO("Waiting for simulator to accept connection on TCP port %u", _port);
 
+		// connect() to INADDR_ANY (0.0.0.0) means localhost on Linux/macOS (and under Wine),
+		// but always fails on Windows (WSAEADDRNOTAVAIL): connect to loopback explicitly.
+		if (_tcp_remote_ipaddr == nullptr && _hostname.empty()) {
+			_myaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+		}
+
 		while (true) {
 			if ((_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 				PX4_ERR("Creating TCP socket failed: %s", strerror(errno));
